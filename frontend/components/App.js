@@ -5,6 +5,7 @@ import LoginForm from "./LoginForm";
 import Message from "./Message";
 import ArticleForm from "./ArticleForm";
 import Spinner from "./Spinner";
+import axios from "axios";
 
 const articlesUrl = "http://localhost:9000/api/articles";
 const loginUrl = "http://localhost:9000/api/login";
@@ -31,24 +32,37 @@ export default function App() {
     navigate("/");
   };
 
-  const login = ({ username, password }) => {
-    // ✨ implement
-    // We should flush the message state, turn on the spinner
-    // and launch a request to the proper endpoint.
-    // On success, we should set the token to local storage in a 'token' key,
-    // put the server success message in its proper state, and redirect
-    // to the Articles screen. Don't forget to turn off the spinner!
+  const login = async ({ username, password }) => {
+    setMessage("");
+    setSpinnerOn(true);
+    try {
+      const { data } = await axios.post("http://localhost:9000/api/login", {
+        usernam,
+        password,
+      });
+      localStorage.setItem("token", data.token);
+      setMessage(data.message);
+      navigate("/articles");
+    } catch (err) {
+      console.error(err);
+    }
+    setSpinnerOn(false);
   };
 
-  const getArticles = () => {
-    // ✨ implement
-    // We should flush the message state, turn on the spinner
-    // and launch an authenticated request to the proper endpoint.
-    // On success, we should set the articles in their proper state and
-    // put the server success message in its proper state.
-    // If something goes wrong, check the status of the response:
-    // if it's a 401 the token might have gone bad, and we should redirect to login.
-    // Don't forget to turn off the spinner!
+  const getArticles = async () => {
+    const token = localStorage.getItem("token");
+    setMessage("");
+    setSpinnerOn(true);
+    try {
+      const response = await axios.get("http://localhost:9000/api/articles", {
+        headers: { Authorization: token },
+      });
+      setArticles(response.article);
+      setMessage(response.message);
+    } catch (err) {
+      if (err?.response?.status == 401) logout();
+    }
+    setSpinnerOn(false);
   };
 
   const postArticle = (article) => {
