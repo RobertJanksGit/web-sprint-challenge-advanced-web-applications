@@ -1,37 +1,28 @@
 import React, { useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import PT from "prop-types";
+import axiosWithAuth from "../axios";
 
-export default function Articles({
-  getArticles,
-  articles,
-  setCurrentArticle,
-  updateArticle,
-  setCurrentArticleId,
-  deleteArticle,
-}) {
-  // ✨ where are my props? Destructure them here
+export default function Articles(props) {
+  if (!localStorage.getItem("token")) {
+    return <Navigate to="/" />;
+  }
 
+  const {
+    articles,
+    getArticles,
+    deleteArticle,
+    currentArticleId,
+    setCurrentArticleId,
+  } = props;
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/");
-    } else {
-      getArticles();
-    }
-  }, []);
+  // ✨ implement conditional logic: if no token exists
+  // we should render a Navigate to login screen (React Router v.6)
 
-  const editArticle = (evt) => {
-    const id = parseInt(evt.target.id);
-    evt.preventDefault();
-    setCurrentArticleId(id);
-    const selectedArticle = articles?.filter((article) => {
-      return article.article_id === id;
-    });
-    setCurrentArticle(selectedArticle[0]);
-  };
+  useEffect(() => {
+    getArticles();
+  }, []);
 
   return (
     // ✨ fix the JSX: replace `Function.prototype` with actual functions
@@ -50,13 +41,15 @@ export default function Articles({
                 </div>
                 <div>
                   <button
-                    id={art.article_id}
                     disabled={false}
-                    onClick={editArticle}
+                    onClick={() => setCurrentArticleId(art.article_id)}
                   >
                     Edit
                   </button>
-                  <button disabled={true} onClick={Function.prototype}>
+                  <button
+                    disabled={false}
+                    onClick={() => deleteArticle(art.article_id)}
+                  >
                     Delete
                   </button>
                 </div>

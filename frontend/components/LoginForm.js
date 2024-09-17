@@ -5,8 +5,9 @@ const initialFormValues = {
   username: "",
   password: "",
 };
-export default function LoginForm({ login }) {
+export default function LoginForm(props) {
   const [values, setValues] = useState(initialFormValues);
+  const { login, setMessage } = props;
 
   const onChange = (evt) => {
     const { id, value } = evt.target;
@@ -15,20 +16,25 @@ export default function LoginForm({ login }) {
 
   const onSubmit = (evt) => {
     evt.preventDefault();
+    setValues({
+      username: values.username.trim(),
+      password: values.password.trim(),
+    });
     login(values);
-    // ✨ implement
+    setValues(initialFormValues);
   };
 
   const isDisabled = () => {
-    // ✨ implement
-    // Trimmed username must be >= 3, and
-    // trimmed password must be >= 8 for
-    // the button to become enabled
+    // username is 3+ characters, password is 8+ characters
+    return (
+      values.username.trim().length < 3 || values.password.trim().length < 8
+    );
   };
 
   return (
     <form id="loginForm" onSubmit={onSubmit}>
       <h2>Login</h2>
+      <div className="loginmessage"></div>
       <input
         maxLength={20}
         value={values.username}
