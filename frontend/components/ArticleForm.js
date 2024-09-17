@@ -9,12 +9,16 @@ export default function ArticleForm({
   updateArticle,
   currentArticle,
   articles,
+  setCurrentArticle,
 }) {
   const [values, setValues] = useState(initialFormValues);
   // ✨ where are my props? Destructure them here
 
   useEffect(() => {
-    if (currentArticle) {
+    if (!currentArticle) {
+      console.log("Not truthy");
+      setValues(initialFormValues);
+    } else {
       console.log("Is truthy");
       setValues({
         title: currentArticle.title,
@@ -22,7 +26,6 @@ export default function ArticleForm({
         topic: currentArticle.topic,
       });
     }
-
     // ✨ implement
     // Every time the `currentArticle` prop changes, we should check it for truthiness:
     // if it's truthy, we should set its title, text and topic into the corresponding
@@ -42,8 +45,12 @@ export default function ArticleForm({
   };
 
   const isDisabled = () => {
-    // ✨ implement
-    // Make sure the inputs have some values
+    if (values.title && values.text && values.topic) return false;
+    else return true;
+  };
+  const cancelEdit = (evt) => {
+    evt.preventDefault();
+    setCurrentArticle(null);
   };
 
   return (
@@ -75,7 +82,7 @@ export default function ArticleForm({
         <button disabled={isDisabled()} id="submitArticle">
           Submit
         </button>
-        <button onClick={Function.prototype}>Cancel edit</button>
+        {currentArticle && <button onClick={cancelEdit}>Cancel edit</button>}
       </div>
     </form>
   );

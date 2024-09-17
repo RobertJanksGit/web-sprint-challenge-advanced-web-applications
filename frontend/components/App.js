@@ -30,6 +30,7 @@ export default function App() {
   const logout = () => {
     localStorage.removeItem("token");
     setMessage("Goodbye!");
+    setCurrentArticle(null);
     navigate("/");
   };
 
@@ -125,6 +126,7 @@ export default function App() {
             element={
               <>
                 <ArticleForm
+                  setCurrentArticle={setCurrentArticle}
                   currentArticle={currentArticle}
                   updateArticle={updateArticle}
                   setCurrentArticleId={setCurrentArticleId}
