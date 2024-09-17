@@ -1,37 +1,45 @@
 import React, { useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import PT from "prop-types";
-import axiosWithAuth from "../axios";
 
-export default function Articles(props) {
-  if (!localStorage.getItem("token")) {
-    return <Navigate to="/" />;
-  }
+export default function Articles({
+  getArticles,
+  articles,
+  setCurrentArticle,
+  setCurrentArticleId,
+  deleteArticle,
+}) {
+  // ✨ where are my props? Destructure them here
 
-  const {
-    articles,
-    getArticles,
-    deleteArticle,
-    currentArticleId,
-    setCurrentArticleId,
-  } = props;
   const navigate = useNavigate();
 
-  // ✨ implement conditional logic: if no token exists
-  // we should render a Navigate to login screen (React Router v.6)
-
   useEffect(() => {
-    getArticles();
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/");
+    } else {
+      getArticles();
+    }
   }, []);
+
+  const editArticle = (evt) => {
+    evt.preventDefault();
+    const id = parseInt(evt.target.id);
+    setCurrentArticleId(id);
+    const selectedArticle = articles?.filter((article) => {
+      return article.article_id === id;
+    });
+    setCurrentArticle(selectedArticle[0]);
+  };
 
   return (
     // ✨ fix the JSX: replace `Function.prototype` with actual functions
     // and use the articles prop to generate articles
     <div className="articles">
       <h2>Articles</h2>
-      {!articles.length
+      {!articles?.length
         ? "No articles yet"
-        : articles.map((art) => {
+        : articles?.map((art) => {
             return (
               <div className="article" key={art.article_id}>
                 <div>
@@ -40,16 +48,10 @@ export default function Articles(props) {
                   <p>Topic: {art.topic}</p>
                 </div>
                 <div>
-                  <button
-                    disabled={false}
-                    onClick={() => setCurrentArticleId(art.article_id)}
-                  >
+                  <button id={art.article_id} onClick={editArticle}>
                     Edit
                   </button>
-                  <button
-                    disabled={false}
-                    onClick={() => deleteArticle(art.article_id)}
-                  >
+                  <button id={art.article_id} onClick={deleteArticle}>
                     Delete
                   </button>
                 </div>

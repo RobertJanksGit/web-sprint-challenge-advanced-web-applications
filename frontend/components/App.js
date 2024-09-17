@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink, Routes, Route, useNavigate } from "react-router-dom";
 import Articles from "./Articles";
 import LoginForm from "./LoginForm";
 import Message from "./Message";
 import ArticleForm from "./ArticleForm";
 import Spinner from "./Spinner";
-
-import axiosWithAuth from "../axios";
+import axios from "axios";
 
 const articlesUrl = "http://localhost:9000/api/articles";
 const loginUrl = "http://localhost:9000/api/login";
@@ -17,129 +16,125 @@ export default function App() {
   const [articles, setArticles] = useState([]);
   const [currentArticleId, setCurrentArticleId] = useState();
   const [spinnerOn, setSpinnerOn] = useState(false);
+  const [currentArticle, setCurrentArticle] = useState(null);
 
+  // ✨ Research `useNavigate` in React Router v.6
   const navigate = useNavigate();
-  const redirectToLogin = () => navigate("/");
-  const redirectToArticles = () => navigate("/articles");
 
   const logout = () => {
     localStorage.removeItem("token");
     setMessage("Goodbye!");
-    redirectToLogin();
+    setCurrentArticle(null);
+    navigate("/");
   };
 
-  const login = ({ username, password }) => {
+  const login = async ({ username, password }) => {
     setMessage("");
     setSpinnerOn(true);
-    axiosWithAuth()
-      .post("/login", { username: username, password: password })
-      .then((res) => {
-        setMessage(res.data.message);
-        localStorage.setItem("token", res.data.token);
-        setSpinnerOn(false);
-        redirectToArticles();
-      })
-      .catch((err) => console.log(err));
-  };
-
-  const getArticles = () => {
-    setMessage("");
-    setSpinnerOn(true);
-
-    axiosWithAuth()
-      .get("/articles")
-      .then((res) => {
-        setMessage(res.data.message);
-        setArticles(res.data.articles);
-        setSpinnerOn(false);
-      })
-      .catch((err) => {
-        setSpinnerOn(false);
-        setMessage(err.response.statusText);
-        redirectToLogin();
+    try {
+      const response = await axios.post(loginUrl, {
+        username,
+        password,
       });
+      localStorage.setItem("token", response.data.token);
+      setMessage(response.data.message);
+      console.log(response.data.message);
+      navigate("/articles");
+    } catch (err) {
+      console.error(err);
+    }
+    setSpinnerOn(false);
   };
 
-  const postArticle = (article) => {
-    setMessage("");
+  const getArticles = async () => {
+    const token = localStorage.getItem("token");
     setSpinnerOn(true);
-
-    axiosWithAuth()
-      .post("/articles", article)
-      .then((res) => {
-        setMessage(res.data.message);
-        setSpinnerOn(false);
-        setArticles([...articles, res.data.article]);
-        redirectToArticles();
-      })
-      .catch((err) => {
-        setSpinnerOn(false);
-        setMessage(err.response.statusText);
-        redirectToArticles();
+    try {
+      const response = await axios.get(articlesUrl, {
+        headers: { Authorization: token },
       });
+      setArticles(response.data.articles);
+      // setMessage(response.data.message);
+    } catch (err) {
+      if (err?.response?.status == 401) logout();
+    } finally {
+      setSpinnerOn(false);
+    }
   };
 
-  const updateArticle = ({ article_id, article }) => {
+  const postArticle = async (article) => {
+    const token = localStorage.getItem("token");
     setMessage("");
     setSpinnerOn(true);
-
-    axiosWithAuth()
-      .put(`/articles/${article_id}`, article)
-      .then((res) => {
-        console.log(res);
-        setMessage(res.data.message);
-        setSpinnerOn(false);
-        console.log(res.data);
-
-        for (let i = 0; i < articles.length; i++) {
-          if (article_id === articles[i].article_id) {
-            articles[i] = { ...res.data.article };
-          }
+    try {
+      const response = await axios.post(
+        articlesUrl,
+        {
+          title: article.title,
+          text: article.text,
+          topic: article.topic,
+        },
+        {
+          headers: { Authorization: token },
         }
-      })
-      .catch((err) => {
-        setSpinnerOn(false);
-        setMessage(err.response.statusText);
-        redirectToArticles();
-      });
-    // ✨ implement
+      );
+      setArticles(response.data.articles);
+      setMessage(response.data.message);
+      getArticles();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSpinnerOn(false);
+    }
   };
 
-  const deleteArticle = (article_id) => {
+  const updateArticle = async (id, article) => {
+    const token = localStorage.getItem("token");
     setMessage("");
     setSpinnerOn(true);
-
-    axiosWithAuth()
-      .delete(`/articles/${article_id}`)
-      .then((res) => {
-        setMessage(res.data.message);
-        setArticles(
-          articles.filter((article) => {
-            return article_id !== article.article_id;
-          })
-        );
-        setSpinnerOn(false);
-      })
-      .catch((err) => {
-        setMessage(err.response.statusText);
-        setSpinnerOn(false);
-      });
+    try {
+      const response = await axios.put(
+        `${articlesUrl}/${id}`,
+        {
+          title: article.title,
+          text: article.text,
+          topic: article.topic,
+        },
+        {
+          headers: { Authorization: token },
+        }
+      );
+      setArticles(response.data.articles);
+      setMessage(response.data.message);
+      getArticles();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const currentArticle = () => {
-    const filtered = articles.filter(
-      (article) => article.article_id === currentArticleId
-    );
-    if (filtered.length === 0) {
-      return null;
-    } else {
-      return filtered[0];
+  const deleteArticle = async (evt) => {
+    evt.preventDefault();
+    const id = parseInt(evt.target.id);
+    const token = localStorage.getItem("token");
+    // setMessage("");
+    setSpinnerOn(true);
+    try {
+      const response = await axios.delete(`${articlesUrl}/${id}`, {
+        headers: { Authorization: token },
+      });
+      setArticles(response.data.articles);
+      console.log(response.data.message);
+      setMessage(response.data.message);
+      await getArticles();
+    } catch (err) {
+      console.error(err);
     }
   };
 
   return (
+    // ✨ fix the JSX: `Spinner`, `Message`, `LoginForm`, `ArticleForm` and `Articles` expect props ❗
     <>
-      <Spinner on={spinnerOn} />
+      <Spinner spinnerOn={spinnerOn} />
       <Message message={message} />
       <button id="logout" onClick={logout}>
         Logout from app
@@ -157,32 +152,33 @@ export default function App() {
           </NavLink>
         </nav>
         <Routes>
-          <Route
-            path="/"
-            element={<LoginForm login={login} setMessage={setMessage} />}
-          />
+          <Route path="/" element={<LoginForm login={login} />} />
           <Route
             path="articles"
             element={
               <>
                 <ArticleForm
+                  currentArticleId={currentArticleId}
+                  setCurrentArticle={setCurrentArticle}
+                  currentArticle={currentArticle}
+                  updateArticle={updateArticle}
                   setCurrentArticleId={setCurrentArticleId}
                   postArticle={postArticle}
-                  updateArticle={updateArticle}
-                  currentArticle={currentArticle()}
+                  articles={articles}
                 />
                 <Articles
-                  articles={articles}
-                  getArticles={getArticles}
                   deleteArticle={deleteArticle}
                   setCurrentArticleId={setCurrentArticleId}
-                  currentArticleId={currentArticleId}
+                  updateArticle={updateArticle}
+                  setCurrentArticle={setCurrentArticle}
+                  getArticles={getArticles}
+                  articles={articles}
                 />
               </>
             }
           />
         </Routes>
-        <footer>Bloom Institute of Technology 2022</footer>
+        <footer>Bloom Institute of Technology 2024</footer>
       </div>
     </>
   );

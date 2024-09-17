@@ -5,9 +5,8 @@ const initialFormValues = {
   username: "",
   password: "",
 };
-export default function LoginForm(props) {
+export default function LoginForm({ login }) {
   const [values, setValues] = useState(initialFormValues);
-  const { login, setMessage } = props;
 
   const onChange = (evt) => {
     const { id, value } = evt.target;
@@ -16,25 +15,21 @@ export default function LoginForm(props) {
 
   const onSubmit = (evt) => {
     evt.preventDefault();
-    setValues({
-      username: values.username.trim(),
-      password: values.password.trim(),
-    });
     login(values);
-    setValues(initialFormValues);
+    // ✨ implement
   };
 
   const isDisabled = () => {
-    // username is 3+ characters, password is 8+ characters
-    return (
-      values.username.trim().length < 3 || values.password.trim().length < 8
-    );
+    if (values.username.length < 3 || values.password.length < 8) {
+      return true;
+    } else {
+      return false;
+    }
   };
 
   return (
     <form id="loginForm" onSubmit={onSubmit}>
       <h2>Login</h2>
-      <div className="loginmessage"></div>
       <input
         maxLength={20}
         value={values.username}
