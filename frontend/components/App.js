@@ -16,6 +16,7 @@ export default function App() {
   const [articles, setArticles] = useState([]);
   const [currentArticleId, setCurrentArticleId] = useState();
   const [spinnerOn, setSpinnerOn] = useState(false);
+  const [currentArticle, setCurrentArticle] = useState(null);
 
   // ✨ Research `useNavigate` in React Router v.6
   const navigate = useNavigate();
@@ -36,8 +37,8 @@ export default function App() {
     setMessage("");
     setSpinnerOn(true);
     try {
-      const { data } = await axios.post("http://localhost:9000/api/login", {
-        usernam,
+      const { data } = await axios.post(loginUrl, {
+        username,
         password,
       });
       localStorage.setItem("token", data.token);
@@ -54,27 +55,43 @@ export default function App() {
     setMessage("");
     setSpinnerOn(true);
     try {
-      const response = await axios.get("http://localhost:9000/api/articles", {
+      const response = await axios.get(articlesUrl, {
         headers: { Authorization: token },
       });
-      setArticles(response.article);
-      setMessage(response.message);
+      setArticles(response.data.articles);
+      setMessage(response.data.message);
     } catch (err) {
       if (err?.response?.status == 401) logout();
     }
     setSpinnerOn(false);
   };
 
-  const postArticle = (article) => {
-    // ✨ implement
-    // The flow is very similar to the `getArticles` function.
-    // You'll know what to do! Use log statements or breakpoints
-    // to inspect the response from the server.
+  const postArticle = async (article) => {
+    const token = localStorage.getItem("token");
+    setMessage("");
+    setSpinnerOn(true);
+    try {
+      const response = await axios.post(articlesUrl, {
+        headers: { Authorization: token },
+        payload: { title, text, topic },
+      });
+      setArticles(response.data.articles);
+      setMessage(response.data.message);
+    } catch (err) {
+      console.error(err);
+    }
+    setSpinnerOn(false);
   };
 
   const updateArticle = ({ article_id, article }) => {
-    // ✨ implement
-    // You got this!
+    const selectedArticle = article.filter((article) => {
+      return article.id === article_id;
+    });
+    setValues({
+      title: selectedArticle.title,
+      text: selectedArticle.text,
+      topic: selectedArticle.topic,
+    });
   };
 
   const deleteArticle = (article_id) => {
@@ -84,8 +101,8 @@ export default function App() {
   return (
     // ✨ fix the JSX: `Spinner`, `Message`, `LoginForm`, `ArticleForm` and `Articles` expect props ❗
     <>
-      <Spinner />
-      <Message />
+      <Spinner spinnerOn={spinnerOn} />
+      <Message message={message} />
       <button id="logout" onClick={logout}>
         Logout from app
       </button>
@@ -102,13 +119,26 @@ export default function App() {
           </NavLink>
         </nav>
         <Routes>
-          <Route path="/" element={<LoginForm />} />
+          <Route path="/" element={<LoginForm login={login} />} />
           <Route
             path="articles"
             element={
               <>
-                <ArticleForm />
-                <Articles />
+                <ArticleForm
+                  currentArticle={currentArticle}
+                  updateArticle={updateArticle}
+                  setCurrentArticleId={setCurrentArticleId}
+                  postArticle={postArticle}
+                  articles={articles}
+                />
+                <Articles
+                  deleteArticle={deleteArticle}
+                  setCurrentArticleId={setCurrentArticleId}
+                  updateArticle={updateArticle}
+                  setCurrentArticle={setCurrentArticle}
+                  getArticles={getArticles}
+                  articles={articles}
+                />
               </>
             }
           />
