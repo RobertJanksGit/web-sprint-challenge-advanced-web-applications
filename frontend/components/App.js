@@ -37,8 +37,6 @@ export default function App() {
         password,
       });
       localStorage.setItem("token", response.data.token);
-      setMessage(response.data.message);
-      console.log(response.data.message);
       navigate("/articles");
     } catch (err) {
       console.error(err);
@@ -54,7 +52,7 @@ export default function App() {
         headers: { Authorization: token },
       });
       setArticles(response.data.articles);
-      // setMessage(response.data.message);
+      setMessage(response.data.message);
     } catch (err) {
       if (err?.response?.status == 401) logout();
     } finally {
@@ -79,8 +77,8 @@ export default function App() {
         }
       );
       setArticles(response.data.articles);
+      await getArticles();
       setMessage(response.data.message);
-      getArticles();
     } catch (err) {
       console.error(err);
     } finally {
@@ -105,8 +103,8 @@ export default function App() {
         }
       );
       setArticles(response.data.articles);
+      await getArticles();
       setMessage(response.data.message);
-      getArticles();
     } catch (err) {
       console.error(err);
     }
@@ -124,8 +122,8 @@ export default function App() {
       });
       setArticles(response.data.articles);
       console.log(response.data.message);
-      setMessage(response.data.message);
       await getArticles();
+      setMessage(response.data.message);
     } catch (err) {
       console.error(err);
     }
